@@ -1,0 +1,17 @@
+{
+  "name": "UMURAGE — Patrimoine de l'Église",
+  "short_name": "UMURAGE",
+  "description": "Inventaire, valorisation et suivi du patrimoine de l'Église.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f3524",
+  "theme_color": "#0f3524",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone-masque-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

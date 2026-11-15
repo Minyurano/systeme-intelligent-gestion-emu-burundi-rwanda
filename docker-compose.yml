@@ -1,0 +1,16 @@
+# Base PostgreSQL pour le développement ou un petit serveur.
+# Lancement : docker compose up -d   puis définir POSTGRES_* (voir backend/.env.example)
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umurage
+      POSTGRES_USER: umurage
+      POSTGRES_PASSWORD: umurage
+    ports:
+      - "5432:5432"
+    volumes:
+      - donnees_umurage:/var/lib/postgresql/data
+volumes:
+  donnees_umurage:

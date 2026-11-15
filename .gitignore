@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+backend/db.sqlite3
+backend/media/
+backend/staticfiles/
+backend/ia_modeles/
+backend/.env
+frontend/node_modules/
+frontend/dist/
+.DS_Store
+backend/sauvegardes/
+.env
+backend/.cache/
+
+# Environnements et archives (jamais dans le dépôt)
+.venv/
+venv/
+backend/.venv/
+*.rar
+*.zip
+.vscode/
+.idea/

@@ -1,0 +1,30 @@
+# Proxy HTTPS d'UMURAGE (utilisé par docker-compose.prod.yml).
+# Caddy obtient et renouvelle automatiquement le certificat HTTPS (Let's Encrypt) pour UMURAGE_DOMAINE.
+{
+	email {$UMURAGE_EMAIL_TLS}
+}
+
+{$UMURAGE_DOMAINE} {
+	encode zstd gzip
+
+	# Caddy ignore le X-Forwarded-For envoyé par le visiteur et le remplace par l'adresse réelle de la connexion :
+	# Django (UMURAGE_NUM_PROXIES=1) lit donc une adresse que le visiteur ne peut pas inventer.
+	reverse_proxy app:8000 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	# Fichiers envoyés (photos, documents) : 25 Mo au plus
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		-Server
+	}
+	log {
+		output stdout
+	}
+}

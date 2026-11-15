@@ -1,0 +1,99 @@
+# Déploiement complet sur un serveur : proxy HTTPS, base PostgreSQL, application et sauvegardes nocturnes.
+#   1. Copier backend/.env.example en .env à la racine et le remplir (dont UMURAGE_DOMAINE et UMURAGE_EMAIL_TLS)
+#   2. Faire pointer le nom de domaine vers ce serveur (ports 80 et 443 ouverts)
+#   3. docker compose -f docker-compose.prod.yml up -d --build
+#   4. docker compose -f docker-compose.prod.yml exec app python manage.py createsuperuser
+#   5. Connecté en administrateur : Paramètres → Intégrations → « Adresse IP des visiteurs » → Vérifier
+#
+# Le proxy Caddy est inclus : il obtient et renouvelle seul le certificat HTTPS, et c'est le SEUL point d'entrée.
+# L'application n'expose aucun port : personne ne peut contourner le proxy pour falsifier son adresse IP.
+services:
+  base:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-umurage}
+      POSTGRES_USER: ${POSTGRES_USER:-umurage}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définissez POSTGRES_PASSWORD dans .env}
+    volumes:
+      - base:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-umurage}"]
+      interval: 10s
+
+  proxy:
+    image: caddy:2.8
+    restart: unless-stopped
+    environment:
+      UMURAGE_DOMAINE: ${UMURAGE_DOMAINE:?Définissez UMURAGE_DOMAINE dans .env (ex. umurage.emu-burundi.org)}
+      UMURAGE_EMAIL_TLS: ${UMURAGE_EMAIL_TLS:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_donnees:/data
+      - caddy_config:/config
+    # Caddy attend que l'application réponde à son contrôle de santé (/api/sante/)
+    depends_on:
+      app:
+        condition: service_healthy
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: base
+      # Un proxy de confiance (Caddy ci-dessus) : l'adresse du visiteur est la dernière de X-Forwarded-For.
+      # Fixé ici pour ne pas dépendre de .env ; à changer seulement si vous ajoutez un répartiteur de charge devant.
+      UMURAGE_NUM_PROXIES: "1"
+      # Le domaine servi par Caddy est le seul nom accepté par Django (obligatoire en production)
+      DJANGO_ALLOWED_HOSTS: ${UMURAGE_DOMAINE}
+    depends_on:
+      base:
+        condition: service_healthy
+    # Aucun port publié : l'application n'est joignable que par le proxy, sur le réseau interne de Docker.
+    expose:
+      - "8000"
+    volumes:
+      - media:/app/backend/media
+      - sauvegardes:/app/backend/sauvegardes
+      - modeles:/app/backend/ia_modeles
+
+  sauvegarde:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: base
+    depends_on:
+      - app
+    volumes:
+      - media:/app/backend/media
+      - sauvegardes:/app/backend/sauvegardes
+    # Une sauvegarde par jour, les 30 dernières sont conservées
+    command: ["sh", "-c", "while true; do sleep 86400; python manage.py sauvegarder --garder 30; done"]
+
+  taches:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: base
+    depends_on:
+      - app
+    volumes:
+      - media:/app/backend/media
+      - modeles:/app/backend/ia_modeles
+    # Chaque jour : loyers du mois, échéances, entretiens préventifs, inspections des biens à risque, rappels WhatsApp
+    command: ["sh", "-c", "while true; do python manage.py executer_taches; sleep 86400; done"]
+
+volumes:
+  caddy_donnees:
+  caddy_config:
+  base:
+  media:
+  sauvegardes:
+  modeles:
