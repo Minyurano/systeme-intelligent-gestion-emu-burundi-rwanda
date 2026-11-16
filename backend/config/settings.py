@@ -23,6 +23,10 @@ UMURAGE_DEMO = env("UMURAGE_DEMO", "1" if DEBUG else "0") == "1"
 # En développement, tout hôte est accepté (essais depuis un téléphone du réseau local).
 # En production, la liste doit être donnée explicitement (vérifié plus bas).
 ALLOWED_HOSTS = [h.strip() for h in env("DJANGO_ALLOWED_HOSTS", "*" if DEBUG else "").split(",") if h.strip()]
+# Hébergement Render : le nom public (xxx.onrender.com) est fourni automatiquement par la plateforme.
+RENDER_HOTE = env("RENDER_EXTERNAL_HOSTNAME", "")
+if RENDER_HOTE and RENDER_HOTE not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_HOTE)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -206,6 +210,8 @@ FICHIERS_LIEN_MINUTES = int(env("FICHIERS_LIEN_MINUTES", "240"))
 
 # --- Sécurité en production -------------------------------------------------------
 CSRF_TRUSTED_ORIGINS = [o for o in env("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+if RENDER_HOTE:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_HOTE}")
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env("DJANGO_SSL_REDIRECT", "1") == "1"

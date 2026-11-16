@@ -1,0 +1,22 @@
+# Démonstration en ligne d'UMURAGE sur Render (offre gratuite).
+# Render → New → Blueprint → choisir ce dépôt : le service est créé avec ces réglages.
+services:
+  - type: web
+    name: umurage-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.demo
+    dockerContext: .
+    healthCheckPath: /api/sante/
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true        # clé secrète aléatoire créée par Render
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: UMURAGE_DEMO
+        value: "1"                 # affiche les comptes de démonstration (mot de passe umurage2026)
+      - key: UMURAGE_NUM_PROXIES
+        value: "1"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: umurage-demo.onrender.com

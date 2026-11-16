@@ -1,0 +1,31 @@
+# UMURAGE — image de DÉMONSTRATION en ligne (Render, Railway, Koyeb…)
+# Identique à l'image de production, mais la base de démonstration est préparée pendant la construction :
+# le service démarre en quelques secondes et repart toujours d'une démonstration propre.
+# Ne jamais utiliser cette image pour de vraies données (base SQLite non conservée entre deux redémarrages).
+
+FROM node:20-alpine AS interface
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DJANGO_DEBUG=0 UMURAGE_DEMO=1 UMURAGE_NUM_PROXIES=1 FRONTEND_DIST=/app/frontend/dist
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-fra \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/backend
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/ ./
+COPY --from=interface /app/frontend/dist /app/frontend/dist
+# Valeurs fictives, seulement pendant la construction (statiques + base de démonstration)
+RUN export DJANGO_SECRET_KEY=construction-de-l-image-de-demonstration-pas-un-secret DJANGO_ALLOWED_HOSTS=construction \
+    && python manage.py collectstatic --noinput \
+    && python manage.py migrate --noinput \
+    && python manage.py seed_demo \
+    && python manage.py seed_metier
+RUN useradd --create-home umurage && mkdir -p media sauvegardes ia_modeles && chown -R umurage /app/backend
+USER umurage
+# La plateforme fournit le port dans $PORT (Render : 10000) ; 8000 par défaut.
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --workers 1 --threads 4 --timeout 120"]

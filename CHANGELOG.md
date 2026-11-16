@@ -10,6 +10,10 @@ Le détail des versions 3.5 à 3.8 (espace membre, dîmes, sessions, proxy) est 
   test et le mot de passe `umurage2026`. Ils n'apparaissent plus qu'en mode démonstration (`UMURAGE_DEMO`, actif par
   défaut seulement quand `DJANGO_DEBUG=1`). `/api/sante/` indique ce mode (`"demo": true/false`).
 
+### Nouveau
+- **Démonstration en ligne** : `Dockerfile.demo` (base de démonstration préparée à la construction) et `render.yaml`
+  pour publier une démonstration permanente sur Render. Le nom public fourni par Render est accepté automatiquement.
+
 ### Corrigé
 - **Langue** : les rôles et descriptions des comptes de démonstration sont traduits (ils restaient en français dans
   l'interface anglaise).
