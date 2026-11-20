@@ -7,6 +7,7 @@ from datetime import date
 import numpy as np
 from django.db.models import Max, Sum
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 from finances.models import Transaction
 from patrimoine.models import Bien, Mouvement
@@ -80,6 +81,28 @@ def recalculer_risques(biens=None):
     return len(biens)
 
 
+def ecarter_mois_incomplets(mois, volume, minimum=6):
+    """Sépare les mois complets des derniers mois incomplets.
+
+    Sont incomplets, en fin de série : le mois en cours, et les mois dont le volume (recettes + dépenses)
+    est inférieur au quart de la médiane des douze mois précédents (saisie en retard). Les compter comme
+    des mois entiers ferait chuter les courbes et fausserait la tendance. On garde au moins `minimum` mois.
+    Renvoie (mois_complets, mois_ecartes), dans l'ordre chronologique.
+    """
+    mois = list(mois)
+    aujourd_hui = timezone.localdate()
+    exclus = []
+    while len(mois) > minimum:
+        m = mois[-1]
+        reference = float(np.median([volume(x) for x in mois[-13:-1]]))
+        en_cours = (m.year, m.month) == (aujourd_hui.year, aujourd_hui.month)
+        if en_cours or (reference > 0 and volume(m) < 0.25 * reference):
+            exclus.insert(0, mois.pop())
+            continue
+        break
+    return mois, exclus
+
+
 def prevision_financiere(qs, horizon=6):
     """
     Prévision mensuelle des recettes et dépenses : tendance linéaire + saisonnalité
@@ -97,7 +120,10 @@ def prevision_financiere(qs, horizon=6):
     if not series:
         return resultat
 
-    tous_mois = sorted({m for s in series.values() for m in s})
+    tous_mois, exclus = ecarter_mois_incomplets(
+        sorted({m for s in series.values() for m in s}),
+        lambda m: series["RECETTE"].get(m, 0) + series["DEPENSE"].get(m, 0))
+    resultat["mois_incomplets"] = [m.strftime("%Y-%m") for m in exclus]
     for m in tous_mois:
         resultat["historique"].append(
             {"mois": m.strftime("%Y-%m"), "recettes": series["RECETTE"].get(m, 0), "depenses": series["DEPENSE"].get(m, 0)}

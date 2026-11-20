@@ -3,6 +3,26 @@
 Évolutions notables d'UMURAGE. La version est affichée en bas du menu de l'application et sur `/api/sante/`.
 Le détail des versions 3.5 à 3.8 (espace membre, dîmes, sessions, proxy) est dans `docs/ANALYSE.md`.
 
+## [3.9.3] — 2026-11-20
+
+### Corrigé
+- **Prévisions financières** : le mois en cours, et les derniers mois dont la saisie n'est pas terminée (volume
+  inférieur au quart de la médiane des douze mois précédents), étaient comptés comme des mois entiers. La courbe
+  chutait presque à zéro et la tendance était faussée. Ils sont maintenant écartés du calcul et signalés sous le
+  graphique (« Mois écarté du calcul car incomplet »). La même règle s'applique à la courbe « Recettes et
+  dépenses » du tableau de bord. Trois tests ajoutés (`ia/tests.py`).
+- **Cache** : la version de l'application fait désormais partie de la clé du cache. Après une mise à jour, un calcul
+  produit par l'ancien code (tableau de bord, carte, portail) n'est plus resservi pendant quelques minutes.
+- **Version affichée** : le menu et `/api/sante/` indiquent 3.9.3.
+- **Icônes dans le texte** : les flèches de tendance (comparaison des églises, tableau de bord, projets, déclarations,
+  espace membre) passaient à la ligne à cause d'une règle de style globale. Elles restent désormais sur la ligne.
+
+### Documentation
+- Projet présenté sous son nom complet : *Système intelligent de gestion du patrimoine de l'Église Méthodiste Unie
+  (Burundi et Rwanda)*, logiciel UMURAGE. README refondu avec captures d'écran, description des méthodes d'IA et
+  architecture ; description détaillée des modules déplacée dans `docs/FONCTIONNALITES.md`.
+- README : chemin corrigé pour les numéros WhatsApp (**Paramètres → Comptes des responsables**) et nombre de tests à jour.
+
 ## [3.9.2] — 2026-11-15
 
 ### Sécurité

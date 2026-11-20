@@ -15,6 +15,8 @@ import time
 from django.core.cache import cache
 from django.db.models.signals import post_delete, post_save
 
+from config.version import VERSION
+
 CLE_VERSION = "umurage:donnees:version"
 DUREE = 300  # secondes
 
@@ -37,7 +39,9 @@ def donnees_modifiees(*args, **kwargs):
 
 
 def cle(*parties):
-    return "umurage:" + ":".join(str(p) for p in parties) + f":v{version()}"
+    # La version de l'application fait partie de la clé : après une mise à jour, aucun calcul
+    # fait par l'ancien code n'est resservi.
+    return "umurage:" + ":".join(str(p) for p in parties) + f":{VERSION}:v{version()}"
 
 
 def brancher_signaux():

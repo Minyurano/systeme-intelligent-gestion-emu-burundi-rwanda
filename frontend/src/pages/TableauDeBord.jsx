@@ -120,6 +120,9 @@ export default function TableauDeBord() {
                   <Area dataKey="depenses" name={t("tb.depenses")} stroke={COULEURS[1]} strokeWidth={2} fill="url(#deg1)" activeDot={{ r: 4, strokeWidth: 2, stroke: c.surface }} />
                 </AreaChart>
               </ResponsiveContainer>
+              {d.tendance_mois_incomplets?.length > 0 && (
+                <p className="secondaire" style={{ marginTop: 6 }}>{t("tb.mois_incomplet", { mois: d.tendance_mois_incomplets.map(moisCourt).join(", ") })}</p>
+              )}
             </Carte>
 
             <Carte titre={t("tb.activite")} description={t("tb.activite_sous")} plein>

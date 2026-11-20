@@ -103,6 +103,8 @@ p { margin: 0; }
 a { color: var(--lac); text-underline-offset: 2px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 img, svg { display: block; }
+/* Icônes placées dans une ligne de texte (flèches de tendance, pictogrammes) : elles restent sur la ligne */
+svg[style*="vertical-align"] { display: inline-block; }
 :focus-visible { outline: 2px solid var(--lac); outline-offset: 2px; border-radius: 4px; }
 ::selection { background: var(--marque-pale); }
 .chiffre, .num { font-variant-numeric: tabular-nums; }

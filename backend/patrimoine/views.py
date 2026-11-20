@@ -1,6 +1,7 @@
 import csv
 import io
 from collections import defaultdict
+from datetime import date
 
 import qrcode
 from django.conf import settings
@@ -210,7 +211,12 @@ def _calculer_tableau_de_bord(request, profil):
     for l in trans.annotate(m=TruncMonth("date")).values("m", "sens").annotate(t=Sum("montant_bif")):
         cle = l["m"].strftime("%Y-%m")
         mensuel[cle]["recettes" if l["sens"] == "RECETTE" else "depenses"] += float(l["t"])
-    tendance = [{"mois": k, **v} for k, v in sorted(mensuel.items())][-12:]
+    # Les derniers mois incomplets (mois en cours, saisie en retard) sont écartés pour ne pas faire chuter la courbe
+    complets, ecartes = predictions.ecarter_mois_incomplets(
+        sorted(date.fromisoformat(k + "-01") for k in mensuel),
+        lambda d: mensuel[d.strftime("%Y-%m")]["recettes"] + mensuel[d.strftime("%Y-%m")]["depenses"])
+    tendance = [{"mois": d.strftime("%Y-%m"), **mensuel[d.strftime("%Y-%m")]} for d in complets][-12:]
+    tendance_mois_incomplets = [d.strftime("%Y-%m") for d in ecartes]
 
     # Activité récente : entretiens, alertes et transactions signalées, du plus récent au plus ancien
     activite = [
@@ -271,6 +277,7 @@ def _calculer_tableau_de_bord(request, profil):
         "par_categorie": [{"categorie": k, **v} for k, v in sorted(par_cat.items(), key=lambda x: -x[1]["valeur"])],
         "par_district": [{"district": k, **v} for k, v in sorted(par_dist.items())],
         "tendance": tendance,
+        "tendance_mois_incomplets": tendance_mois_incomplets,
         "activite": activite[:10],
         "etats": list(biens.values("etat").annotate(n=Count("id")).order_by("etat")),
         "impact_odd": _impact_odd(biens, projets),

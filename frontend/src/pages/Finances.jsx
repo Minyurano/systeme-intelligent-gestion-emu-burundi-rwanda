@@ -192,7 +192,9 @@ function Prevision({ p }) {
   const f1 = (v) => v.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
   const fmt = (v) => (Array.isArray(v) ? `${f1(v[0])} à ${f1(v[1])} M` : `${f1(v)} M ${devise()}`);
   const filtre = (pl) => (pl.some((x) => x.dataKey === "recettes") ? pl.filter((x) => !String(x.dataKey).endsWith("_prev")) : pl);
+  const incomplets = p.mois_incomplets || [];
   return (
+    <>
     <ResponsiveContainer width="100%" height={290}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: -8 }}>
         <CartesianGrid vertical={false} stroke={c.grille} />
@@ -207,6 +209,12 @@ function Prevision({ p }) {
         <Line dataKey="depenses_prev" name="Dépenses prévues" stroke={C_DEP} strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
       </ComposedChart>
     </ResponsiveContainer>
+    {incomplets.length > 0 && (
+      <p className="secondaire" style={{ marginTop: 6 }}>
+        {incomplets.length > 1 ? "Mois écartés du calcul car incomplets" : "Mois écarté du calcul car incomplet"} (saisie en cours) : {incomplets.map(moisCourt).join(", ")}
+      </p>
+    )}
+    </>
   );
 }
 
